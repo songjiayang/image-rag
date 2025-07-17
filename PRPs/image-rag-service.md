@@ -8,7 +8,7 @@ Build a production-ready Image RAG service that enables users to upload images a
 ## Goal
 Create a complete Image RAG service with:
 1. **Backend API**: Go + Gin REST API for record management and image search
-2. **Vector Service**: Python service for image vectorization using Doubao API
+2. **Vector Service**: Integrated Doubao API client in Go for direct image vectorization
 3. **Frontend**: Vue.js SPA for record management and visual search interface
 4. **Database**: MySQL for metadata, Milvus for vector storage
 5. **Integration**: Seamless pipeline from image upload to vector search
@@ -67,7 +67,7 @@ Create a complete Image RAG service with:
 
 # Code Examples from Project
 - file: examples/image-rag-example.md
-  why: Complete implementation examples for Go backend, Python vector service, and Vue.js frontend
+  why: Complete implementation examples for Go backend with integrated vector service and Vue.js frontend
   
 - file: CLAUDE.md
   why: Project-wide rules including file size limits, testing requirements, and naming conventions
@@ -118,19 +118,6 @@ image-rag/
 │   ├── go.mod
 │   ├── go.sum
 │   └── .env.example
-├── vector-service/
-│   ├── src/
-│   │   ├── services/
-│   │   │   └── vector_service.py
-│   │   ├── api/
-│   │   │   └── app.py
-│   │   └── models/
-│   │       └── schemas.py
-│   ├── tests/
-│   │   └── test_vector_service.py
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── Dockerfile
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
@@ -155,36 +142,6 @@ image-rag/
 ```
 
 ### Known Gotchas & Library Quirks
-```python
-# CRITICAL: Doubao API requires base64 encoded images with specific format
-# Supported formats: JPEG, PNG, WebP (max 10MB per image)
-# Base64 string must be properly formatted without data URI prefix
-
-# CRITICAL: Milvus vector dimensions must match model output
-# doubao-embedding-vision-250615 outputs 1024-dimensional vectors
-# Collection schema must specify dim=1024
-
-# CRITICAL: Go file upload requires proper multipart form handling
-# Use gin.Context.FormFile() and c.SaveUploadedFile() for file handling
-# Set appropriate max memory limits: router.MaxMultipartMemory = 64 << 20
-
-# CRITICAL: CORS configuration required for frontend-backend communication
-# Allow origins, methods, and headers for file uploads
-# Use github.com/gin-contrib/cors middleware
-
-# CRITICAL: Async processing for image vectorization
-# Use goroutines for non-blocking vector generation
-# Implement proper error handling and cleanup for failed operations
-
-# CRITICAL: Database consistency between MySQL and Milvus
-# Use transactions where possible
-# Implement cleanup for orphaned vectors when records are deleted
-
-# CRITICAL: Image file validation
-# Check file extensions (.jpg, .jpeg, .png, .webp)
-# Validate file size (max 10MB)
-# Verify image format using Go's image.DecodeConfig()
-```
 
 ## Implementation Blueprint
 
@@ -220,23 +177,6 @@ type Image struct {
 ```
 
 #### Milvus Collection Schema
-```python
-# vector_service/models/collection.py
-from pymilvus import CollectionSchema, FieldSchema, DataType
-
-def create_image_collection_schema():
-    fields = [
-        FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
-        FieldSchema(name="image_id", dtype=DataType.VARCHAR, max_length=100),
-        FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=1024)
-    ]
-    
-    schema = CollectionSchema(
-        fields=fields,
-        description="Image embeddings for similarity search"
-    )
-    return schema
-```
 
 ### Task List (in order)
 
@@ -252,11 +192,6 @@ CREATE backend/internal/database/connection.go:
   - MySQL connection setup
   - Database migrations
   - Connection pooling
-
-CREATE vector-service/.env.example:
-  - Doubao API key configuration
-  - Milvus connection settings
-  - Python service configuration
 ```
 
 #### Task 2: Backend API Structure
@@ -290,13 +225,8 @@ CREATE backend/internal/services/record_service.go:
   - Image file management
   - Database transactions
 
-CREATE backend/internal/services/vector_service.go:
-  - HTTP client for vector service
-  - Retry logic for API calls
-  - Error handling
-
-CREATE vector-service/src/services/vector_service.py:
-  - Doubao API integration
+CREATE backend/internal/services/doubao_service.go:
+  - Direct Doubao API integration in Go
   - Image preprocessing
   - Vector storage in Milvus
 ```
@@ -353,7 +283,7 @@ CREATE backend/tests/record_service_test.go:
   - Mock database interactions
   - Error scenario testing
 
-CREATE vector-service/tests/test_vector_service.py:
+CREATE backend/tests/doubao_service_test.go:
   - Mock Doubao API responses
   - Milvus integration tests
   - Image processing tests
@@ -363,7 +293,6 @@ CREATE docker-compose.yml:
   - Milvus service
   - Backend service
   - Frontend service
-  - Python vector service
 ```
 
 ### Integration Points
@@ -419,20 +348,14 @@ go test ./... -v
 go test ./... -cover
 ```
 
-### Level 3: Python Vector Service
+### Level 3: Vector Service Integration
 ```bash
-cd vector-service
-# Install dependencies
-pip install -r requirements.txt
+cd backend
+# Test Doubao service integration
+go test ./internal/services -v
 
-# Run tests
-python -m pytest tests/ -v
-
-# Type checking
-mypy src/
-
-# Code style
-flake8 src/
+# Test vector storage in Milvus
+go test ./internal/milvus -v
 ```
 
 ### Level 4: Frontend Build
