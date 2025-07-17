@@ -56,7 +56,8 @@
         <el-card shadow="hover" class="preferences-card">
           <template #header>
             <div class="card-header">
-              <span>Search Preferences</span㸼/div>
+              <span>Search Preferences</span>
+            </div>
           </template>
 
           <el-form :model="searchPreferences" label-width="140px">
@@ -105,7 +106,7 @@
           </div>
 
           <div v-else class="status-info">
-            <el-descriptions :column="1" border
+            <el-descriptions :column="1" border>
               <el-descriptions-item label="Backend Status">
                 <el-tag :type="systemStatus.backend ? 'success' : 'danger'">
                   {{ systemStatus.backend ? 'Online' : 'Offline' }}

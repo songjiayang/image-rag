@@ -26,7 +26,7 @@
           <template #header>
             <div class="card-header">
               <span>All Records</span>
-              <div class="card-actions"
+              <div class="card-actions">
                 <el-input
                   v-model="searchQuery"
                   placeholder="Search records..."
@@ -34,7 +34,7 @@
                   style="width: 200px; margin-right: 10px"
                   @clear="loadRecords"
                 >
-                  <template #prefix><el-icon><Search /></el-icon></template>
+                  <template ><el-icon><Search /></el-icon></template>
                 </el-input>
               </div>
             </div>
