@@ -19,15 +19,6 @@
 - **Use clear, consistent imports** (prefer relative imports within packages).
 - **Use environment variables** for configuration (database URLs, API keys, etc.)
 
-### 🧪 Testing & Reliability
-- **Always create Pytest unit tests for new features** (functions, classes, routes, etc).
-- **After updating any logic**, check whether existing unit tests need to be updated. If so, do it.
-- **Tests should live in a `/tests` folder** mirroring the main app structure.
-  - Include at least:
-    - 1 test for expected use
-    - 1 edge case
-    - 1 failure case
-
 ### ✅ Task Completion
 - **Mark completed tasks in `TASK.md`** immediately after finishing them.
 - Add new sub-tasks or TODOs discovered during development to `TASK.md` under a “Discovered During Work” section.
@@ -42,19 +33,6 @@
 - **API Documentation**: OpenAPI/Swagger for Go API endpoints
 - **Code Style**: Follow language-specific conventions (PEP8 for Python, gofmt for Go)
 - **Configuration**: Use `.env` files for all external service configurations
-- **Write docstrings for every function** using appropriate style for each language
-  ```python
-  def example():
-      """
-      Brief summary.
-
-      Args:
-          param1 (type): Description.
-
-      Returns:
-          type: Description.
-      """
-  ```
 
 ### 📚 Documentation & Explainability
 - **Update `README.md`** when new features are added, dependencies change, or setup steps are modified.

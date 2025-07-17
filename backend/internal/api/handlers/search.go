@@ -34,6 +34,17 @@ func NewSearchHandler(recordService *services.RecordService, vectorService *serv
 }
 
 // SearchImages searches for similar images based on query image
+// @Summary Search similar images
+// @Description Upload an image to search for similar images in the database using vector similarity
+// @Tags Search
+// @Accept multipart/form-data
+// @Produce json
+// @Param image formData file true "Image file to search for"
+// @Param top_k query int false "Number of results to return (default: 10, max: 100)"
+// @Success 200 {object} SearchResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /search [post]
 func (h *SearchHandler) SearchImages(c *gin.Context) {
 	file, header, err := c.Request.FormFile("image")
 	if err != nil {

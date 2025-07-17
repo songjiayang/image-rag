@@ -1,6 +1,7 @@
 package api
 
 import (
+	_ "image-rag-backend/docs"
 	"image-rag-backend/internal/api/handlers"
 	"image-rag-backend/internal/api/middleware"
 	"image-rag-backend/internal/config"
@@ -8,6 +9,8 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config) {
@@ -33,6 +36,9 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 	// API routes
 	api := router.Group("/api/v1")
+
+	// Swagger documentation
+	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Health check
 	api.GET("/health", func(c *gin.Context) {

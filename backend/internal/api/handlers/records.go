@@ -12,6 +12,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @Summary Create a new record with images
+// @Description Create a new record with associated images and generate vectors for similarity search
+// @Tags Records
+// @Accept multipart/form-data
+// @Produce json
+// @Param name formData string true "Record name"
+// @Param description formData string false "Record description"
+// @Param images formData []file true "Image files to upload"
+// @Success 201 {object} models.RecordResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /records [post]
+
 type RecordHandler struct {
 	recordService *services.RecordService
 	vectorService *services.VectorService
