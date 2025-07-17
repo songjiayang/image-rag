@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: image-rag-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: image_rag
+      MYSQL_USER: image_rag
+      MYSQL_PASSWORD: image_rag_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - image-rag-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  milvus:
+    image: milvusdb/milvus:v2.3.4
+    container_name: image-rag-milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    volumes:
+      - milvus_data:/var/lib/milvus
+    networks:
+      - image-rag-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: image-rag-backend
+    environment:
+      - PORT=8080
+      - ENV=development
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=image_rag
+      - MYSQL_PASSWORD=image_rag_password
+      - MYSQL_DATABASE=image_rag
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
+      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/embeddings}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      milvus:
+        condition: service_healthy
+    networks:
+      - image-rag-network
+    volumes:
+      - ./uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: image-rag-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - image-rag-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mysql_data:
+  milvus_data:
+
+networks:
+  image-rag-network:
+    driver: bridge

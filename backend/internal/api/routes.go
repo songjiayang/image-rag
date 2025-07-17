@@ -5,6 +5,8 @@ import (
 	"image-rag-backend/internal/api/handlers"
 	"image-rag-backend/internal/api/middleware"
 	"image-rag-backend/internal/config"
+	"image-rag-backend/internal/database"
+	"image-rag-backend/internal/milvus"
 	"image-rag-backend/internal/services"
 	"log"
 
@@ -40,10 +42,22 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 	// Swagger documentation
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
-	// Health check
-	api.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
-	})
+	// Initialize database and milvus clients for health checks
+	if err := database.InitDB(cfg); err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+
+	milvusClient, err := milvus.NewClient(&cfg.Milvus)
+	if err != nil {
+		log.Fatal("Failed to connect to milvus:", err)
+	}
+
+	healthHandler := handlers.NewHealthHandler(database.DB, milvusClient)
+
+	// Health check endpoints
+	api.GET("/health", healthHandler.HealthCheck)
+	api.GET("/health/ready", healthHandler.ReadinessCheck)
+	api.GET("/health/live", healthHandler.LivenessCheck)
 
 	// Records routes
 	api.POST("/records", recordHandler.CreateRecord)

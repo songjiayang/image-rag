@@ -2,7 +2,6 @@
 - **Always read `PLANNING.md`** at the start of a new conversation to understand the project's architecture, goals, style, and constraints.
 - **Check `TASK.md`** before starting a new task. If the task isn't listed, add it with a brief description and today's date.
 - **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
-- **Use venv_linux** (the virtual environment) whenever executing Python commands, including for unit tests.
 - **Project Goal**: Image RAG service for vector-based image search returning image info (id, name, description)
 
 ### 🧱 Code Structure & Modularity
@@ -10,7 +9,7 @@
 - **Organize code into clearly separated modules**, grouped by feature or responsibility.
   - **Frontend**: Vue.js SPA for RAG service management
   - **Backend**: Go + Gin REST API with separate packages for handlers, models, services, middleware
-  - **Vector Service**: Python service for image vectorization using Doubao API
+  - **Vector Service**: Integrated into Go backend for direct Doubao API calls
 - **Architecture**: 
   - Database: MySQL for metadata storage (records with name, description)
   - Vector DB: Milvus for image embeddings
@@ -26,12 +25,12 @@
 ### 📎 Style & Conventions
 - **Backend**: Go with Gin framework, follow Go conventions and use `gofmt` for formatting
 - **Frontend**: Vue.js 3 with Composition API, TypeScript preferred
-- **Vector Service**: Python for image processing and vectorization service
+- **Vector Service**: Integrated into Go backend for direct Doubao API calls
 - **Database**: 
   - MySQL with GORM for Go backend
   - Milvus for vector storage with Python client
 - **API Documentation**: OpenAPI/Swagger for Go API endpoints
-- **Code Style**: Follow language-specific conventions (PEP8 for Python, gofmt for Go)
+- **Code Style**: Follow Go conventions with gofmt for formatting
 - **Configuration**: Use `.env` files for all external service configurations
 
 ### 📚 Documentation & Explainability
@@ -50,7 +49,6 @@
 - **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `TASK.md`
 - **Service Architecture**:
   - **Backend API**: Go + Gin (port 8080)
-  - **Vector Service**: Python (port 8081)
   - **Frontend**: Vue.js (port 3000)
   - **Databases**: MySQL (3306) + Milvus (19530)
 - **Image Processing**: Use Doubao doubao-embedding-vision-250615 for vectorization

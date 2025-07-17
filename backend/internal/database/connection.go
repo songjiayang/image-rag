@@ -62,3 +62,12 @@ func CloseDB() error {
 	}
 	return sqlDB.Close()
 }
+
+// Ping checks if the database connection is alive
+func Ping() error {
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Ping()
+}
