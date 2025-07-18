@@ -252,11 +252,11 @@ const loadRecords = async () => {
   }
 }
 
-const handleFileChange = (file: any, fileList: any[]) => {
+const handleFileChange = (_file: any, fileList: any[]) => {
   createForm.value.images = fileList.map(f => f.raw)
 }
 
-const handleFileRemove = (file: any, fileList: any[]) => {
+const handleFileRemove = (_file: any, fileList: any[]) => {
   createForm.value.images = fileList.map(f => f.raw)
 }
 

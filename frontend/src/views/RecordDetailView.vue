@@ -276,7 +276,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { recordService, searchService } from '@/services/api'
-import type { Record, Image } from '@/types'
+import type { Record, Image, SearchResult } from '@/types'
 import { ArrowLeft, Plus, More, Edit, Delete, Search, Upload } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -375,9 +375,9 @@ const findSimilar = async (imageId: number) => {
 
   findingSimilar.value = true
   try {
-    const results = await searchService.findSimilar(imageId, 12)
-    similarImages.value = results
-    if (results.length === 0) {
+    const response = await searchService.findSimilar(imageId, 12)
+    similarImages.value = response.results
+    if (response.results.length === 0) {
       ElMessage.info('No similar images found')
     }
   } catch (error) {
@@ -432,6 +432,10 @@ const deleteRecord = async () => {
 
 const goBack = () => {
   router.push('/records')
+}
+
+const viewRecord = (recordId: number) => {
+  router.push(`/records/${recordId}`)
 }
 
 const formatDate = (dateString: string) => {

@@ -29,12 +29,14 @@ type SearchResult struct {
 }
 
 func NewClient(cfg *config.MilvusConfig) (*Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 
-	cli, err := client.NewGrpcClient(ctx, cfg.Host+":"+cfg.Port)
+	cli, err := client.NewClient(ctx, client.Config{
+		Address: cfg.Host + ":" + cfg.Port,
+	})
 	if err != nil {
 		cancel()
-		return nil, fmt.Errorf("failed to connect to milvus: %w", err)
+		return nil, fmt.Errorf("failed to connect to milvus at %s:%s %w", cfg.Host, cfg.Port, err)
 	}
 
 	return &Client{

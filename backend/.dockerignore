@@ -6,10 +6,12 @@
 README.md
 CHANGELOG.md
 
-# Development files
+# Environment files
 .env
 .env.local
 .env.development
+.env.production
+.env.example
 .env.test
 
 # IDE

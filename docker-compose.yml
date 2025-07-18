@@ -20,22 +20,32 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-
+      
   milvus:
-    image: milvusdb/milvus:v2.3.4
+    image: milvusdb/milvus:v2.5.14
     container_name: image-rag-milvus
-    ports:
-      - "19530:19530"
-      - "9091:9091"
+    command: milvus run standalone
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - ETCD_USE_EMBED=true  # 启用内置Etcd
+      - ETCD_DATA_DIR=/var/lib/milvus/etcd  # 内置Etcd数据目录
+      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml  # 内置Etcd配置路径
+      - COMMON_STORAGETYPE=local  # 使用本地存储（替代MinIO）
     volumes:
-      - milvus_data:/var/lib/milvus
-    networks:
-      - image-rag-network
+      - ./volumes/milvus:/var/lib/milvus  # 本地数据持久化
+      - ./milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml  # 内置Etcd配置
+      - ./milvus/user.yaml:/milvus/configs/user.yaml  # 用户自定义配置
+    ports:
+      - "19530:19530"  # Milvus服务端口
+      - "9091:9091"    # 健康检查端口
+      - "2379:2379"    # 内置Etcd客户端端口
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
       interval: 30s
-      timeout: 10s
+      timeout: 20s
       retries: 3
+      start_period: 90s
 
   backend:
     build:
@@ -64,7 +74,7 @@ services:
     networks:
       - image-rag-network
     volumes:
-      - ./uploads:/app/uploads
+      - uploads_data:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
@@ -90,7 +100,7 @@ services:
 
 volumes:
   mysql_data:
-  milvus_data:
+  uploads_data:
 
 networks:
   image-rag-network:
