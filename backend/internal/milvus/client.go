@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"image-rag-backend/internal/config"
 	"strconv"
-	"time"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"
@@ -29,7 +28,7 @@ type SearchResult struct {
 }
 
 func NewClient(cfg *config.MilvusConfig) (*Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	cli, err := client.NewClient(ctx, client.Config{
 		Address: cfg.Host + ":" + cfg.Port,

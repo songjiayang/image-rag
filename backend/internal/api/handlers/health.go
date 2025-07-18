@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -49,6 +50,7 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 
 	// Check Milvus connection
 	if err := h.milvus.Ping(); err != nil {
+		log.Print(err)
 		response.Services["milvus"] = "unhealthy"
 		response.Status = "degraded"
 	} else {
