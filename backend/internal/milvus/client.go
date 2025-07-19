@@ -91,14 +91,11 @@ func (c *Client) CreateCollection() error {
 		return fmt.Errorf("failed to create collection: %w", err)
 	}
 
-	// Create index
-	index := entity.NewGenericIndex(
-		"embedding_idx",
-		entity.IvfFlat,
-		map[string]string{
-			"nlist": "128",
-		},
-	)
+	// Create index using proper Milvus index constructor
+	index, err := entity.NewIndexIvfFlat(entity.L2, 128)
+	if err != nil {
+		return fmt.Errorf("failed to create index: %w", err)
+	}
 
 	if err := c.client.CreateIndex(c.ctx, "image_embeddings", "embedding", index, false); err != nil {
 		return fmt.Errorf("failed to create index: %w", err)

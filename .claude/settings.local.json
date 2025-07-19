@@ -30,7 +30,8 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(docker run:*)",
       "Bash(chown:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(go run:*)"
     ],
     "deny": []
   }

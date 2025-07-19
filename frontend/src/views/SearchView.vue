@@ -199,7 +199,6 @@
                     <img
                       :src="`/api/v1/images/${result.image_id}/preview`"
                       :alt="result.record_name"
-                      @error="handleImageError"
                     />
                   </div>
 
@@ -383,11 +382,6 @@ const findSimilar = async (imageId: number) => {
   } finally {
     searching.value = false
   }
-}
-
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.src = '/placeholder-image.jpg'
 }
 
 // Initialize

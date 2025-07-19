@@ -2,10 +2,6 @@ package main
 
 import (
 	"context"
-	"image-rag-backend/internal/api"
-	"image-rag-backend/internal/config"
-	"image-rag-backend/internal/database"
-	"image-rag-backend/internal/services"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +11,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+
+	"image-rag-backend/internal/api"
+	"image-rag-backend/internal/config"
+	"image-rag-backend/internal/database"
+	"image-rag-backend/internal/services"
 )
 
 func main() {
@@ -31,6 +32,7 @@ func main() {
 	if err := services.EnsureDirectoryExists(cfg.Upload.Path); err != nil {
 		log.Fatal("Failed to create upload directory:", err)
 	}
+
 	if err := services.EnsureDirectoryExists(filepath.Join(cfg.Upload.Path, "temp")); err != nil {
 		log.Fatal("Failed to create temp directory:", err)
 	}
