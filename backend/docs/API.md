@@ -263,11 +263,11 @@ curl http://localhost:8080/api/v1/records?page=1&limit=20
 ## Environment Variables
 ```bash
 # Database
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=password
-DB_NAME=image_rag
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=image_rag
+MYSQL_PASSWORD=image_rag_password
+MYSQL_DATABASE=image_rag
 
 # Milvus
 MILVUS_HOST=localhost
