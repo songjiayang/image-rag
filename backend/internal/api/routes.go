@@ -71,6 +71,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, log *logger.Logger) {
 	// Image management routes
 	api.POST("/records/:id/images", recordHandler.AddImageToRecord)
 	api.DELETE("/images/:image_id", recordHandler.DeleteImage)
+	api.GET("/images/:id/preview", recordHandler.GetImagePreview)
 
 	// Search routes
 	api.POST("/search", searchHandler.SearchImages)
