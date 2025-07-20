@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"image-rag-backend/internal/logger"
 	"image-rag-backend/internal/models"
 	"image-rag-backend/internal/services"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 type SearchHandler struct {
 	recordService *services.RecordService
 	vectorService *services.VectorService
+	logger        *logger.Logger
 }
 
 type SearchResult struct {
@@ -26,10 +28,11 @@ type SearchResult struct {
 	Distance    float64 `json:"distance"`
 }
 
-func NewSearchHandler(recordService *services.RecordService, vectorService *services.VectorService) *SearchHandler {
+func NewSearchHandler(recordService *services.RecordService, vectorService *services.VectorService, logger *logger.Logger) *SearchHandler {
 	return &SearchHandler{
 		recordService: recordService,
 		vectorService: vectorService,
+		logger:        logger,
 	}
 }
 

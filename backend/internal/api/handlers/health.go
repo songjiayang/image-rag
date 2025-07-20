@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"time"
 
+	"image-rag-backend/internal/logger"
 	"image-rag-backend/internal/milvus"
 
 	"github.com/gin-gonic/gin"
@@ -14,12 +14,14 @@ import (
 type HealthHandler struct {
 	db     *gorm.DB
 	milvus *milvus.Client
+	logger *logger.Logger
 }
 
-func NewHealthHandler(db *gorm.DB, milvus *milvus.Client) *HealthHandler {
+func NewHealthHandler(db *gorm.DB, milvus *milvus.Client, logger *logger.Logger) *HealthHandler {
 	return &HealthHandler{
 		db:     db,
 		milvus: milvus,
+		logger: logger,
 	}
 }
 
@@ -50,7 +52,7 @@ func (h *HealthHandler) HealthCheck(c *gin.Context) {
 
 	// Check Milvus connection
 	if err := h.milvus.Ping(); err != nil {
-		log.Print(err)
+		h.logger.Error("Milvus connection failed: %v", err)
 		response.Services["milvus"] = "unhealthy"
 		response.Status = "degraded"
 	} else {

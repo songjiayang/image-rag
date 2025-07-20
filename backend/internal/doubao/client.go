@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"image-rag-backend/internal/config"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"time"
+
+	"image-rag-backend/internal/config"
 )
 
 type Client struct {
@@ -21,28 +22,36 @@ type Client struct {
 }
 
 type EmbeddingRequest struct {
-	Model string `json:"model"`
-	Input struct {
-		Images []ImageData `json:"images"`
-	} `json:"input"`
+	Model      string      `json:"model"`
+	Input      []ImageData `json:"input"`
+	Dimensions int         `json:"dimensions"`
 }
 
 type ImageData struct {
-	Data   string `json:"data"`
-	Format string `json:"format"`
+	Type     string   `json:"type"`
+	ImageUrl ImageUrl `json:"image_url"`
+}
+
+type ImageUrl struct {
+	Url string `json:"url"`
 }
 
 type EmbeddingResponse struct {
-	Data []struct {
+	Created int64 `json:"created"`
+	Data    struct {
 		Embedding []float32 `json:"embedding"`
-		Index     int       `json:"index"`
 		Object    string    `json:"object"`
 	} `json:"data"`
+	ID     string `json:"id"`
 	Model  string `json:"model"`
 	Object string `json:"object"`
 	Usage  struct {
-		PromptTokens int `json:"prompt_tokens"`
-		TotalTokens  int `json:"total_tokens"`
+		PromptTokens        int `json:"prompt_tokens"`
+		TotalTokens         int `json:"total_tokens"`
+		PromptTokensDetails struct {
+			ImageTokens int `json:"image_tokens"`
+			TextTokens  int `json:"text_tokens"`
+		} `json:"prompt_tokens_details"`
 	} `json:"usage"`
 }
 
@@ -74,12 +83,15 @@ func (c *Client) GenerateEmbedding(imagePath string) ([]float32, error) {
 	// Prepare request
 	req := EmbeddingRequest{
 		Model: c.model,
-	}
-	req.Input.Images = []ImageData{
-		{
-			Data:   imageData,
-			Format: format,
+		Input: []ImageData{
+			{
+				Type: "image_url",
+				ImageUrl: ImageUrl{
+					Url: fmt.Sprintf("data:image/%s;base64,%s", format, imageData),
+				},
+			},
 		},
+		Dimensions: 1024,
 	}
 
 	jsonData, err := json.Marshal(req)
@@ -114,11 +126,15 @@ func (c *Client) GenerateEmbedding(imagePath string) ([]float32, error) {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if len(response.Data) == 0 {
-		return nil, fmt.Errorf("no embedding data in response")
+	if response.Data.Object != "embedding" {
+		return nil, fmt.Errorf("unexpected response object type: %s", response.Data.Object)
 	}
 
-	return response.Data[0].Embedding, nil
+	if len(response.Data.Embedding) == 0 {
+		return nil, fmt.Errorf("empty embedding in response")
+	}
+
+	return response.Data.Embedding, nil
 }
 
 func (c *Client) GenerateEmbeddingFromFile(file multipart.File, filename string) ([]float32, error) {
@@ -141,12 +157,15 @@ func (c *Client) GenerateEmbeddingFromFile(file multipart.File, filename string)
 	// Prepare request
 	req := EmbeddingRequest{
 		Model: c.model,
-	}
-	req.Input.Images = []ImageData{
-		{
-			Data:   imageData,
-			Format: format,
+		Input: []ImageData{
+			{
+				Type: "image_url",
+				ImageUrl: ImageUrl{
+					Url: fmt.Sprintf("data:image/%s;base64,%s", format, imageData),
+				},
+			},
 		},
+		Dimensions: 1024,
 	}
 
 	jsonData, err := json.Marshal(req)
@@ -181,11 +200,15 @@ func (c *Client) GenerateEmbeddingFromFile(file multipart.File, filename string)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
 
-	if len(response.Data) == 0 {
-		return nil, fmt.Errorf("no embedding data in response")
+	if response.Data.Object != "embedding" {
+		return nil, fmt.Errorf("unexpected response object type: %s", response.Data.Object)
 	}
 
-	return response.Data[0].Embedding, nil
+	if len(response.Data.Embedding) == 0 {
+		return nil, fmt.Errorf("empty embedding in response")
+	}
+
+	return response.Data.Embedding, nil
 }
 
 // encodeImageToBase64 reads an image file and returns base64 encoded data

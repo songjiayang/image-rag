@@ -8,3 +8,5 @@ node_modules
 frontend/dist
 volumes/
 .env
+logs/
+uploads

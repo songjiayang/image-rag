@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"image-rag-backend/internal/logger"
 	"image-rag-backend/internal/models"
 	"image-rag-backend/internal/services"
 	"net/http"
@@ -28,12 +29,14 @@ import (
 type RecordHandler struct {
 	recordService *services.RecordService
 	vectorService *services.VectorService
+	logger        *logger.Logger
 }
 
-func NewRecordHandler(recordService *services.RecordService, vectorService *services.VectorService) *RecordHandler {
+func NewRecordHandler(recordService *services.RecordService, vectorService *services.VectorService, logger *logger.Logger) *RecordHandler {
 	return &RecordHandler{
 		recordService: recordService,
 		vectorService: vectorService,
+		logger:        logger,
 	}
 }
 
@@ -258,6 +261,7 @@ func (h *RecordHandler) AddImageToRecord(c *gin.Context) {
 	// Generate vector
 	vectorID, err := h.vectorService.GenerateVector(filePath)
 	if err != nil {
+		h.logger.Error("generarte image vector with error: %v", err)
 		// Clean up file
 		_ = services.NewRecordService().DeleteImageByPath(filePath)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate vector"})

@@ -6,32 +6,32 @@ import (
 	"image-rag-backend/internal/api/middleware"
 	"image-rag-backend/internal/config"
 	"image-rag-backend/internal/database"
+	"image-rag-backend/internal/logger"
 	"image-rag-backend/internal/milvus"
 	"image-rag-backend/internal/services"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func SetupRoutes(router *gin.Engine, cfg *config.Config) {
-	// Initialize services
+func SetupRoutes(router *gin.Engine, cfg *config.Config, log *logger.Logger) {
+	// Initialize service
 	recordService := services.NewRecordService()
 	vectorService, err := services.NewVectorService(cfg)
 	if err != nil {
-		log.Fatal("Failed to initialize vector service:", err)
+		log.Fatal("Failed to initialize vector service: %v", err)
 	}
 
 	// Initialize handlers
-	recordHandler := handlers.NewRecordHandler(recordService, vectorService)
-	searchHandler := handlers.NewSearchHandler(recordService, vectorService)
+	recordHandler := handlers.NewRecordHandler(recordService, vectorService, log)
+	searchHandler := handlers.NewSearchHandler(recordService, vectorService, log)
 
 	// Global middleware
+	router.Use(middleware.LoggingMiddleware(log))
+	router.Use(middleware.ErrorHandlerMiddleware(log))
 	router.Use(middleware.CORSMiddleware())
 	router.Use(middleware.DefaultRateLimit())
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
 
 	// Set max multipart memory to 64MB
 	router.MaxMultipartMemory = 64 << 20 // 64 MB
@@ -44,15 +44,17 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config) {
 
 	// Initialize database and milvus clients for health checks
 	if err := database.InitDB(cfg); err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatal("Failed to connect to database: %v", err)
 	}
 
 	milvusClient, err := milvus.NewClient(&cfg.Milvus)
 	if err != nil {
-		log.Fatal("Failed to connect to milvus:", err)
+		log.Fatal("Failed to connect to milvus: %v", err)
 	}
 
-	healthHandler := handlers.NewHealthHandler(database.DB, milvusClient)
+	log.Info("ddd2222323")
+
+	healthHandler := handlers.NewHealthHandler(database.DB, milvusClient, log)
 
 	// Health check endpoints
 	api.GET("/health", healthHandler.HealthCheck)
