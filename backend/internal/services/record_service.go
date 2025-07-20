@@ -48,6 +48,17 @@ func (s *RecordService) GetRecord(id uint) (*models.Record, error) {
 	return &record, nil
 }
 
+func (s *RecordService) GetImage(id uint) (*models.Image, error) {
+	var image models.Image
+	if err := s.db.First(&image, id).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("image not found")
+		}
+		return nil, fmt.Errorf("failed to get image: %w", err)
+	}
+	return &image, nil
+}
+
 func (s *RecordService) GetRecords(limit, offset int) ([]models.Record, int64, error) {
 	var records []models.Record
 	var total int64
@@ -137,17 +148,6 @@ func (s *RecordService) DeleteImage(id uint) error {
 	}
 
 	return nil
-}
-
-func (s *RecordService) GetImage(id uint) (*models.Image, error) {
-	var image models.Image
-	if err := s.db.First(&image, id).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("image not found")
-		}
-		return nil, fmt.Errorf("failed to get image: %w", err)
-	}
-	return &image, nil
 }
 
 func (s *RecordService) GetImagesByRecordID(recordID uint) ([]models.Image, error) {

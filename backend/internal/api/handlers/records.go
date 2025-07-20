@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"fmt"
+	"image-rag-backend/internal/logger"
 	"image-rag-backend/internal/models"
 	"image-rag-backend/internal/services"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -28,12 +30,14 @@ import (
 type RecordHandler struct {
 	recordService *services.RecordService
 	vectorService *services.VectorService
+	logger        *logger.Logger
 }
 
-func NewRecordHandler(recordService *services.RecordService, vectorService *services.VectorService) *RecordHandler {
+func NewRecordHandler(recordService *services.RecordService, vectorService *services.VectorService, logger *logger.Logger) *RecordHandler {
 	return &RecordHandler{
 		recordService: recordService,
 		vectorService: vectorService,
+		logger:        logger,
 	}
 }
 
@@ -258,6 +262,7 @@ func (h *RecordHandler) AddImageToRecord(c *gin.Context) {
 	// Generate vector
 	vectorID, err := h.vectorService.GenerateVector(filePath)
 	if err != nil {
+		h.logger.Error("generarte image vector with error: %v", err)
 		// Clean up file
 		_ = services.NewRecordService().DeleteImageByPath(filePath)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate vector"})
@@ -304,4 +309,29 @@ func (h *RecordHandler) DeleteImage(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "image deleted successfully"})
+}
+
+// GetImagePreview serves an image file for preview
+func (h *RecordHandler) GetImagePreview(c *gin.Context) {
+	imageID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid image ID"})
+		return
+	}
+
+	// Get image metadata
+	image, err := h.recordService.GetImage(uint(imageID))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "image not found"})
+		return
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(image.Path); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "image file not found"})
+		return
+	}
+
+	// Serve the image file
+	c.File(image.Path)
 }

@@ -1,8 +1,11 @@
 package config
 
 import (
+	"log"
 	"os"
 	"strconv"
+
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -44,13 +47,18 @@ type MilvusConfig struct {
 }
 
 func Load() *Config {
+	// Load .env file if it exists
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found or error loading .env file, using system environment variables")
+	}
+
 	return &Config{
 		Database: DatabaseConfig{
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnv("DB_PORT", "3306"),
-			User:     getEnv("DB_USER", "root"),
-			Password: getEnv("DB_PASSWORD", "password"),
-			Database: getEnv("DB_NAME", "image_rag"),
+			Host:     getEnv("MYSQL_HOST", "localhost"),
+			Port:     getEnv("MYSQL_PORT", "3306"),
+			User:     getEnv("MYSQL_USER", "root"),
+			Password: getEnv("MYSQL_PASSWORD", "password"),
+			Database: getEnv("MYSQL_NAME", "image_rag"),
 		},
 		Server: ServerConfig{
 			Port: getEnv("SERVER_PORT", "8080"),

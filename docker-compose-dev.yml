@@ -47,61 +47,9 @@ services:
       retries: 3
       start_period: 90s
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: image-rag-backend
-    environment:
-      - PORT=8080
-      - ENV=development
-      - MYSQL_HOST=mysql
-      - MYSQL_PORT=3306
-      - MYSQL_USER=image_rag
-      - MYSQL_PASSWORD=image_rag_password
-      - MYSQL_DATABASE=image_rag
-      - MILVUS_HOST=milvus
-      - MILVUS_PORT=19530
-      - DOUBAO_API_KEY=${DOUBAO_API_KEY}
-      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/embeddings}
-    ports:
-      - "8080:8080"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      milvus:
-        condition: service_healthy
-    networks:
-      - image-rag-network
-    volumes:
-      - uploads_data:/app/uploads
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: image-rag-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    networks:
-      - image-rag-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 volumes:
   mysql_data:
-  uploads_data:
-
+  
 networks:
   image-rag-network:
     driver: bridge

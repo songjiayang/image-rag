@@ -35,10 +35,11 @@ WORKDIR /app
 COPY --from=builder /app/main .
 
 # Copy environment file
-COPY --from=builder /app/.env.example .env.example
+# COPY --from=builder /app/.env.example .env.example
 
-# Change ownership to non-root user
-RUN chown -R app:app /app
+# Create uploads directory and set permissions
+RUN mkdir -p /app/uploads/temp && \
+    chown -R app:app /app
 
 # Switch to non-root user
 USER app

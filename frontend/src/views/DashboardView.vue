@@ -128,7 +128,6 @@
                     v-if="record.images.length > 0"
                     :src="`/api/v1/images/${record.images[0].id}/preview`" 
                     :alt="record.name"
-                    @error="handleImageError"
                   />
                   <div v-else class="no-image">
                     <el-icon><Picture /></el-icon>
@@ -153,6 +152,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { recordService } from '@/services/api'
 import type { Record } from '@/types'
+import { formatDate } from '@/utils/date-utils'
 
 const router = useRouter()
 
@@ -204,14 +204,6 @@ const goToRecord = (id: number) => {
   router.push(`/records/${id}`)
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
-}
-
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.src = '/placeholder-image.jpg'
-}
 
 onMounted(() => {
   loadDashboardData()

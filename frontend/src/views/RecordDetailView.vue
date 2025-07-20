@@ -54,7 +54,6 @@
                     :src="`/api/v1/images/${image.id}/preview`" 
                     :alt="record.name"
                     class="gallery-image"
-                    @error="handleImageError"
                   />
                 </el-carousel-item>
               </el-carousel>
@@ -64,7 +63,6 @@
                   :src="`/api/v1/images/${record.images[0].id}/preview`" 
                   :alt="record.name"
                   class="gallery-image"
-                  @error="handleImageError"
                 />
               </div>
 
@@ -79,7 +77,6 @@
                   <img 
                     :src="`/api/v1/images/${image.id}/preview`" 
                     :alt="record.name"
-                    @error="handleImageError"
                   />
                 </div>
               </div>
@@ -133,7 +130,6 @@
                       :src="`/api/v1/images/${similar.image_id}/preview`" 
                       :alt="similar.record_name"
                       class="similar-image"
-                      @error="handleImageError"
                     />
                     <div class="similar-info">
                       <h5>{{ similar.record_name }}</h5>
@@ -276,7 +272,8 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { recordService, searchService } from '@/services/api'
-import type { Record, Image } from '@/types'
+import type { Record, Image, SearchResult } from '@/types'
+import { formatDate } from '@/utils/date-utils'
 import { ArrowLeft, Plus, More, Edit, Delete, Search, Upload } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -375,9 +372,9 @@ const findSimilar = async (imageId: number) => {
 
   findingSimilar.value = true
   try {
-    const results = await searchService.findSimilar(imageId, 12)
-    similarImages.value = results
-    if (results.length === 0) {
+    const response = await searchService.findSimilar(imageId, 12)
+    similarImages.value = response.results
+    if (response.results.length === 0) {
       ElMessage.info('No similar images found')
     }
   } catch (error) {
@@ -434,14 +431,10 @@ const goBack = () => {
   router.push('/records')
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
+const viewRecord = (recordId: number) => {
+  router.push(`/records/${recordId}`)
 }
 
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.src = '/placeholder-image.jpg'
-}
 
 // Initialize
 onMounted(() => {

@@ -102,7 +102,6 @@
                             v-if="record.images[0]"
                             :src="`/api/v1/images/${record.images[0].id}/preview`"
                             :alt="record.name"
-                            @error="handleImageError"
                           />
                         </div>
                         <div v-if="record.images.length > 1" class="image-count">
@@ -201,6 +200,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { recordService } from '@/services/api'
 import type { Record, CreateRecordRequest } from '@/types'
+import { formatDate } from '@/utils/date-utils'
 
 const router = useRouter()
 
@@ -252,11 +252,11 @@ const loadRecords = async () => {
   }
 }
 
-const handleFileChange = (file: any, fileList: any[]) => {
+const handleFileChange = (_file: any, fileList: any[]) => {
   createForm.value.images = fileList.map(f => f.raw)
 }
 
-const handleFileRemove = (file: any, fileList: any[]) => {
+const handleFileRemove = (_file: any, fileList: any[]) => {
   createForm.value.images = fileList.map(f => f.raw)
 }
 
@@ -355,14 +355,6 @@ const handleCurrentChange = (page: number) => {
   loadRecords()
 }
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString()
-}
-
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.src = '/placeholder-image.jpg'
-}
 
 watch(searchQuery, (newQuery) => {
   // TODO: Implement search functionality

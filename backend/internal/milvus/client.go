@@ -15,7 +15,6 @@ type Client struct {
 	client client.Client
 	cfg    *config.MilvusConfig
 	ctx    context.Context
-	cancel context.CancelFunc
 }
 
 type VectorData struct {
@@ -29,32 +28,39 @@ type SearchResult struct {
 }
 
 func NewClient(cfg *config.MilvusConfig) (*Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx := context.Background()
 
-	cli, err := client.NewGrpcClient(ctx, cfg.Host+":"+cfg.Port)
+	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	cli, err := client.NewClient(timeout, client.Config{
+		Address: cfg.Host + ":" + cfg.Port,
+	})
 	if err != nil {
-		cancel()
-		return nil, fmt.Errorf("failed to connect to milvus: %w", err)
+		return nil, fmt.Errorf("failed to connect to milvus at %s:%s %w", cfg.Host, cfg.Port, err)
 	}
 
 	return &Client{
 		client: cli,
 		cfg:    cfg,
 		ctx:    ctx,
-		cancel: cancel,
 	}, nil
 }
 
 // CreateCollection creates the image embeddings collection
 func (c *Client) CreateCollection() error {
 	// Check if collection already exists
-	exists, err := c.client.HasCollection(c.ctx, "image_embeddings")
+	ctx, cancel := context.WithTimeout(c.ctx, 5*time.Second)
+	defer cancel()
+
+	exists, err := c.client.HasCollection(ctx, "image_embeddings")
 	if err != nil {
 		return fmt.Errorf("failed to check collection existence: %w", err)
 	}
 
 	if exists {
-		return nil // Collection already exists
+		// Collection already exists, ensure it's loaded
+		return c.LoadCollection()
 	}
 
 	// Define schema
@@ -86,33 +92,29 @@ func (c *Client) CreateCollection() error {
 	}
 
 	// Create collection
-	if err := c.client.CreateCollection(c.ctx, schema, 2); err != nil {
+	if err := c.client.CreateCollection(ctx, schema, 2); err != nil {
 		return fmt.Errorf("failed to create collection: %w", err)
 	}
 
-	// Create index
-	index := entity.NewGenericIndex(
-		"embedding_idx",
-		entity.IvfFlat,
-		map[string]string{
-			"nlist": "128",
-		},
-	)
+	// Create index using proper Milvus index constructor
+	index, err := entity.NewIndexIvfFlat(entity.L2, 1024)
+	if err != nil {
+		return fmt.Errorf("failed to create index: %w", err)
+	}
 
-	if err := c.client.CreateIndex(c.ctx, "image_embeddings", "embedding", index, false); err != nil {
+	if err := c.client.CreateIndex(ctx, "image_embeddings", "embedding", index, false); err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
 	}
 
 	// Load collection
-	if err := c.client.LoadCollection(c.ctx, "image_embeddings", false); err != nil {
-		return fmt.Errorf("failed to load collection: %w", err)
-	}
-
-	return nil
+	return c.LoadCollection()
 }
 
 // InsertVector inserts a vector into the collection
 func (c *Client) InsertVector(imageID string, vector []float32) (int64, error) {
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
 	// Prepare data
 	ids := []string{imageID}
 	vectors := [][]float32{vector}
@@ -127,7 +129,7 @@ func (c *Client) InsertVector(imageID string, vector []float32) (int64, error) {
 	}
 
 	// Flush to ensure data is persisted
-	if err := c.client.Flush(c.ctx, "image_embeddings", false); err != nil {
+	if err := c.client.Flush(ctx, "image_embeddings", false); err != nil {
 		return 0, fmt.Errorf("failed to flush collection: %w", err)
 	}
 
@@ -138,6 +140,9 @@ func (c *Client) InsertVector(imageID string, vector []float32) (int64, error) {
 
 // SearchSimilar searches for similar vectors
 func (c *Client) SearchSimilar(vector []float32, topK int) ([]SearchResult, error) {
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
 	if topK <= 0 {
 		topK = 10
 	}
@@ -150,7 +155,7 @@ func (c *Client) SearchSimilar(vector []float32, topK int) ([]SearchResult, erro
 
 	// Perform search
 	results, err := c.client.Search(
-		c.ctx,
+		ctx,
 		"image_embeddings",
 		[]string{},
 		"",
@@ -193,16 +198,22 @@ func (c *Client) SearchSimilar(vector []float32, topK int) ([]SearchResult, erro
 
 // DeleteVector deletes a vector by image ID
 func (c *Client) DeleteVector(imageID string) error {
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
 	// This is a simplified delete operation
 	// In production, you might want to use a more sophisticated approach
 	expr := fmt.Sprintf(`image_id == "%s"`, imageID)
 
-	return c.client.Delete(c.ctx, "image_embeddings", "", expr)
+	return c.client.Delete(ctx, "image_embeddings", "", expr)
 }
 
 // GetVectorCount returns the total number of vectors
 func (c *Client) GetVectorCount() (int64, error) {
-	stats, err := c.client.GetCollectionStatistics(c.ctx, "image_embeddings")
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
+	stats, err := c.client.GetCollectionStatistics(ctx, "image_embeddings")
 	if err != nil {
 		return 0, fmt.Errorf("failed to get collection statistics: %w", err)
 	}
@@ -217,38 +228,76 @@ func (c *Client) GetVectorCount() (int64, error) {
 
 // Close closes the Milvus client connection
 func (c *Client) Close() error {
-	c.cancel()
 	return c.client.Close()
 }
 
 // Ping checks if the Milvus server is available
 func (c *Client) Ping() error {
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
 	// Use GetCollectionStatistics as a simple health check
-	_, err := c.client.GetCollectionStatistics(c.ctx, "image_embeddings")
+	_, err := c.client.GetCollectionStatistics(ctx, "image_embeddings")
 	return err
 }
 
 // DeleteByExpr deletes vectors by expression
 func (c *Client) DeleteByExpr(expr string) error {
-	return c.client.Delete(c.ctx, "image_embeddings", "", expr)
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
+	return c.client.Delete(ctx, "image_embeddings", "", expr)
 }
 
 // LoadCollection loads the collection into memory
 func (c *Client) LoadCollection() error {
-	return c.client.LoadCollection(c.ctx, "image_embeddings", false)
+	ctx, cancel := context.WithTimeout(c.ctx, 10*time.Second)
+	defer cancel()
+
+	// Check if collection is already loaded
+	loaded, err := c.client.GetLoadState(ctx, "image_embeddings", []string{})
+	if err != nil {
+		return fmt.Errorf("failed to check load state: %w", err)
+	}
+
+	if loaded == entity.LoadStateLoaded {
+		return nil // Already loaded
+	}
+
+	// Load collection with retry
+	var lastErr error
+	for i := 0; i < 3; i++ {
+		if err := c.client.LoadCollection(ctx, "image_embeddings", false); err != nil {
+			lastErr = fmt.Errorf("failed to load collection (attempt %d): %w", i+1, err)
+			time.Sleep(time.Second * time.Duration(i+1))
+			continue
+		}
+		return nil
+	}
+
+	return lastErr
 }
 
 // ReleaseCollection releases the collection from memory
 func (c *Client) ReleaseCollection() error {
-	return c.client.ReleaseCollection(c.ctx, "image_embeddings")
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
+	return c.client.ReleaseCollection(ctx, "image_embeddings")
 }
 
 // HasCollection checks if collection exists
 func (c *Client) HasCollection(name string) (bool, error) {
-	return c.client.HasCollection(c.ctx, name)
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
+	return c.client.HasCollection(ctx, name)
 }
 
 // DropCollection drops the collection
 func (c *Client) DropCollection(name string) error {
-	return c.client.DropCollection(c.ctx, name)
+	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	defer cancel()
+
+	return c.client.DropCollection(ctx, name)
 }

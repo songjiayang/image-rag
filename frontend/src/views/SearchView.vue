@@ -199,7 +199,6 @@
                     <img
                       :src="`/api/v1/images/${result.image_id}/preview`"
                       :alt="result.record_name"
-                      @error="handleImageError"
                     />
                   </div>
 
@@ -241,7 +240,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { searchService, recordService } from '@/services/api'
-import type { SearchResult, Record } from '@/types'
+import type { SearchResult, Record, SearchResponse } from '@/types'
 
 const router = useRouter()
 
@@ -320,24 +319,24 @@ const performSearch = async () => {
 
   searching.value = true
   try {
-    let results: SearchResult[]
+    let response: SearchResponse
     
     if (searchOptions.value.useAdvanced) {
       // Convert data URL or URL to File for advanced search
       const file = await convertToFile(searchImage.value)
-      results = await searchService.advancedSearch(file, {
+      response = await searchService.advancedSearch(file, {
         q: searchOptions.value.textQuery,
         record_name: searchOptions.value.recordName,
         top_k: searchOptions.value.topK
       })
     } else {
       const file = await convertToFile(searchImage.value)
-      results = await searchService.searchImages(file, searchOptions.value.topK)
+      response = await searchService.searchImages(file, searchOptions.value.topK)
     }
 
-    searchResults.value = results
+    searchResults.value = response.results
     
-    if (results.length === 0) {
+    if (response.results.length === 0) {
       ElMessage.info('No similar images found')
     }
   } catch (error) {
@@ -375,19 +374,14 @@ const findSimilar = async (imageId: number) => {
   
   searching.value = true
   try {
-    const results = await searchService.findSimilar(imageId, searchOptions.value.topK)
-    searchResults.value = results
+    const response = await searchService.findSimilar(imageId, searchOptions.value.topK)
+    searchResults.value = response.results
   } catch (error) {
     console.error('Find similar failed:', error)
     ElMessage.error('Failed to find similar images')
   } finally {
     searching.value = false
   }
-}
-
-const handleImageError = (event: Event) => {
-  const img = event.target as HTMLImageElement
-  img.src = '/placeholder-image.jpg'
 }
 
 // Initialize
