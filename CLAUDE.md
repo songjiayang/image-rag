@@ -1,7 +1,7 @@
 ### 🔄 Project Awareness & Context
-- **Always read `PLANNING.md`** at the start of a new conversation to understand the project's architecture, goals, style, and constraints.
+- **Always read `./PRPS/image-rag-service.md`** at the start of a new conversation to understand the project's architecture, goals, style, and constraints.
 - **Check `TASK.md`** before starting a new task. If the task isn't listed, add it with a brief description and today's date.
-- **Use consistent naming conventions, file structure, and architecture patterns** as described in `PLANNING.md`.
+- **Use consistent naming conventions, file structure, and architecture patterns** as described in `./PRPS/image-rag-service.md`.
 - **Project Goal**: Image RAG service for vector-based image search returning image info (id, name, description)
 
 ### 🧱 Code Structure & Modularity
@@ -28,7 +28,7 @@
 - **Vector Service**: Integrated into Go backend for direct Doubao API calls
 - **Database**: 
   - MySQL with GORM for Go backend
-  - Milvus for vector storage with Python client
+  - Milvus for vector storage
 - **API Documentation**: OpenAPI/Swagger for Go API endpoints
 - **Code Style**: Follow Go conventions with gofmt for formatting
 - **Configuration**: Use `.env` files for all external service configurations
@@ -44,7 +44,7 @@
 
 ### 🧠 AI Behavior Rules
 - **Never assume missing context. Ask questions if uncertain.**
-- **Never hallucinate libraries or functions** – only use known, verified packages for Go, Python, and Node.js
+- **Never hallucinate libraries or functions** – only use known, verified packages for Go and Node.js
 - **Always confirm file paths and module names** exist before referencing them in code or tests
 - **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `TASK.md`
 - **Service Architecture**:
