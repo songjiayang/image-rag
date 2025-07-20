@@ -52,8 +52,6 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, log *logger.Logger) {
 		log.Fatal("Failed to connect to milvus: %v", err)
 	}
 
-	log.Info("ddd2222323")
-
 	healthHandler := handlers.NewHealthHandler(database.DB, milvusClient, log)
 
 	// Health check endpoints

@@ -1,0 +1,30 @@
+# Development stage with hot reload
+FROM golang:1.21-alpine
+
+# Install build dependencies and tools
+RUN apk add --no-cache git ca-certificates curl wget netcat-openbsd bind-tools
+
+# Set working directory
+WORKDIR /app
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Install air for hot reload
+RUN go install github.com/cosmtrek/air@latest
+
+# Create wait script
+COPY wait-for-services.sh /app/wait-for-services.sh
+RUN chmod +x /app/wait-for-services.sh
+
+# Create uploads directory
+RUN mkdir -p /app/uploads/temp
+
+# Expose port
+EXPOSE 8080
+
+# Use air for hot reload during development with wait script
+CMD ["./wait-for-services.sh", "air", "-c", ".air.toml"]

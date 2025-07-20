@@ -1,9 +1,70 @@
 version: '3.8'
 
 services:
+  etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.18
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/etcd:/etcd
+    command: etcd -advertise-client-urls=http://etcd:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2024-05-28T17-19-04Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    ports:
+      - "9001:9001"
+      - "9000:9000"
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/minio:/minio_data
+    command: minio server /minio_data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  milvus:
+    container_name: milvus-standalone
+    image: milvusdb/milvus:v2.5.14
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      MINIO_REGION: us-east-1
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "etcd"
+      - "minio"
+  
   mysql:
     image: mysql:8.0
     container_name: image-rag-mysql
+    hostname: mysql
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: image_rag
@@ -14,38 +75,10 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backend/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - image-rag-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
       retries: 10
-      
-  milvus:
-    image: milvusdb/milvus:v2.5.14
-    container_name: image-rag-milvus
-    command: milvus run standalone
-    security_opt:
-      - seccomp:unconfined
-    environment:
-      - ETCD_USE_EMBED=true  # 启用内置Etcd
-      - ETCD_DATA_DIR=/var/lib/milvus/etcd  # 内置Etcd数据目录
-      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml  # 内置Etcd配置路径
-      - COMMON_STORAGETYPE=local  # 使用本地存储（替代MinIO）
-    volumes:
-      - ./volumes/milvus:/var/lib/milvus  # 本地数据持久化
-      - ./milvus/embedEtcd.yaml:/milvus/configs/embedEtcd.yaml  # 内置Etcd配置
-      - ./milvus/user.yaml:/milvus/configs/user.yaml  # 用户自定义配置
-    ports:
-      - "19530:19530"  # Milvus服务端口
-      - "9091:9091"    # 健康检查端口
-      - "2379:2379"    # 内置Etcd客户端端口
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-      start_period: 90s
 
   backend:
     build:
@@ -67,19 +100,16 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      mysql:
-        condition: service_healthy
-      milvus:
-        condition: service_healthy
-    networks:
-      - image-rag-network
+      - mysql
+      - milvus
     volumes:
       - uploads_data:/app/uploads
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 60s
 
   frontend:
     build:
@@ -90,8 +120,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    networks:
-      - image-rag-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s

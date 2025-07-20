@@ -22,8 +22,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main cmd/server/m
 # Final stage
 FROM alpine:latest
 
-# Install ca-certificates for HTTPS requests
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates, netcat, and dns tools for wait script
+RUN apk --no-cache add ca-certificates netcat-openbsd bind-tools
 
 # Create non-root user
 RUN addgroup -g 1001 -S app && \
@@ -33,6 +33,10 @@ WORKDIR /app
 
 # Copy the binary from builder stage
 COPY --from=builder /app/main .
+COPY --from=builder /app/wait-for-services.sh .
+
+# Make wait script executable
+RUN chmod +x wait-for-services.sh
 
 # Copy environment file
 # COPY --from=builder /app/.env.example .env.example
@@ -51,5 +55,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-# Run the application
-CMD ["./main"]
+# Run the application with wait script
+CMD ["./wait-for-services.sh", "./main"]

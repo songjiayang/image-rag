@@ -30,7 +30,7 @@ type SearchResult struct {
 func NewClient(cfg *config.MilvusConfig) (*Client, error) {
 	ctx := context.Background()
 
-	timeout, cancel := context.WithTimeout(ctx, 3*time.Second)
+	timeout, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	cli, err := client.NewClient(timeout, client.Config{
