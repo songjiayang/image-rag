@@ -31,7 +31,8 @@
       "Bash(docker run:*)",
       "Bash(chown:*)",
       "Bash(chmod:*)",
-      "Bash(go run:*)"
+      "Bash(go run:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

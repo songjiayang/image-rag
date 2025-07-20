@@ -63,7 +63,7 @@ services:
       - MILVUS_HOST=milvus
       - MILVUS_PORT=19530
       - DOUBAO_API_KEY=${DOUBAO_API_KEY}
-      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/embeddings}
+      - DOUBAO_API_URL=${DOUBAO_API_URL:-https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal}
     ports:
       - "8080:8080"
     depends_on:

@@ -76,7 +76,7 @@ func Load() *Config {
 		Doubao: DoubaoConfig{
 			APIKey: getEnv("DOUBAO_API_KEY", ""),
 			Model:  getEnv("DOUBAO_MODEL", "doubao-embedding-vision-250615"),
-			URL:    getEnv("DOUBAO_API_URL", "https://ark.cn-beijing.volces.com/api/v3/embeddings"),
+			URL:    getEnv("DOUBAO_API_URL", "https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal"),
 		},
 		Milvus: MilvusConfig{
 			Host:     getEnv("MILVUS_HOST", "localhost"),

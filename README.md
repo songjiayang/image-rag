@@ -118,19 +118,20 @@ kubectl apply -f k8s/production/
 ### Environment Variables
 ```bash
 # Database
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=password
-DB_NAME=image_rag
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=image_rag
+MYSQL_PASSWORD=image_rag_password
+MYSQL_DATABASE=image_rag
 
 # Milvus
 MILVUS_HOST=localhost
 MILVUS_PORT=19530
 
 # Doubao API
-DOUBAO_API_KEY=your-api-key
-DOUBAO_ENDPOINT=https://ark.cn-beijing.volces.com/api/v3
+DOUBAO_API_KEY=a4669252-fb4a-4c3c-937f-06c0ea98ce19
+DOUBAO_MODEL=doubao-embedding-vision-250615
+DOUBAO_API_URL=https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal
 
 # Service URLs
 BACKEND_URL=http://localhost:8080
