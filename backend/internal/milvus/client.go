@@ -59,7 +59,8 @@ func (c *Client) CreateCollection() error {
 	}
 
 	if exists {
-		return nil // Collection already exists
+		// Collection already exists, ensure it's loaded
+		return c.LoadCollection()
 	}
 
 	// Define schema
@@ -96,7 +97,7 @@ func (c *Client) CreateCollection() error {
 	}
 
 	// Create index using proper Milvus index constructor
-	index, err := entity.NewIndexIvfFlat(entity.L2, 128)
+	index, err := entity.NewIndexIvfFlat(entity.L2, 1024)
 	if err != nil {
 		return fmt.Errorf("failed to create index: %w", err)
 	}
@@ -106,11 +107,7 @@ func (c *Client) CreateCollection() error {
 	}
 
 	// Load collection
-	if err := c.client.LoadCollection(ctx, "image_embeddings", false); err != nil {
-		return fmt.Errorf("failed to load collection: %w", err)
-	}
-
-	return nil
+	return c.LoadCollection()
 }
 
 // InsertVector inserts a vector into the collection
@@ -254,10 +251,31 @@ func (c *Client) DeleteByExpr(expr string) error {
 
 // LoadCollection loads the collection into memory
 func (c *Client) LoadCollection() error {
-	ctx, cancel := context.WithTimeout(c.ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(c.ctx, 10*time.Second)
 	defer cancel()
 
-	return c.client.LoadCollection(ctx, "image_embeddings", false)
+	// Check if collection is already loaded
+	loaded, err := c.client.GetLoadState(ctx, "image_embeddings", []string{})
+	if err != nil {
+		return fmt.Errorf("failed to check load state: %w", err)
+	}
+
+	if loaded == entity.LoadStateLoaded {
+		return nil // Already loaded
+	}
+
+	// Load collection with retry
+	var lastErr error
+	for i := 0; i < 3; i++ {
+		if err := c.client.LoadCollection(ctx, "image_embeddings", false); err != nil {
+			lastErr = fmt.Errorf("failed to load collection (attempt %d): %w", i+1, err)
+			time.Sleep(time.Second * time.Duration(i+1))
+			continue
+		}
+		return nil
+	}
+
+	return lastErr
 }
 
 // ReleaseCollection releases the collection from memory

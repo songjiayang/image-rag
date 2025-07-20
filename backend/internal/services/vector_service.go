@@ -33,9 +33,9 @@ func NewVectorService(cfg *config.Config) (*VectorService, error) {
 		return nil, fmt.Errorf("failed to create milvus client: %w", err)
 	}
 
-	// Initialize Milvus collection
+	// Initialize Milvus collection (creates if needed and loads)
 	if err := milvusClient.CreateCollection(); err != nil {
-		return nil, fmt.Errorf("failed to create milvus collection: %w", err)
+		return nil, fmt.Errorf("failed to create/load milvus collection: %w", err)
 	}
 
 	return &VectorService{
