@@ -10,3 +10,4 @@ volumes/
 .env
 logs/
 uploads
+.claude/settings.local.json

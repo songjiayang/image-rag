@@ -3,9 +3,10 @@ package milvus
 import (
 	"context"
 	"fmt"
-	"image-rag-backend/internal/config"
 	"strconv"
 	"time"
+
+	"image-rag-backend/internal/config"
 
 	"github.com/milvus-io/milvus-sdk-go/v2/client"
 	"github.com/milvus-io/milvus-sdk-go/v2/entity"

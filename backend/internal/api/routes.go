@@ -1,7 +1,6 @@
 package api
 
 import (
-	_ "image-rag-backend/docs"
 	"image-rag-backend/internal/api/handlers"
 	"image-rag-backend/internal/api/middleware"
 	"image-rag-backend/internal/config"
@@ -16,12 +15,13 @@ import (
 )
 
 func SetupRoutes(router *gin.Engine, cfg *config.Config, log *logger.Logger) {
-	// Initialize service
+	// Initialize services
 	recordService := services.NewRecordService()
 	vectorService, err := services.NewVectorService(cfg)
 	if err != nil {
 		log.Fatal("Failed to initialize vector service: %v", err)
 	}
+	statsService := services.NewStatsService(database.DB)
 
 	// Initialize handlers
 	recordHandler := handlers.NewRecordHandler(recordService, vectorService, log)
@@ -53,6 +53,7 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, log *logger.Logger) {
 	}
 
 	healthHandler := handlers.NewHealthHandler(database.DB, milvusClient, log)
+	statsHandler := handlers.NewStatsHandler(statsService)
 
 	// Health check endpoints
 	api.GET("/health", healthHandler.HealthCheck)
@@ -76,6 +77,11 @@ func SetupRoutes(router *gin.Engine, cfg *config.Config, log *logger.Logger) {
 	api.GET("/search/similar/:id", searchHandler.FindSimilar)
 	api.POST("/search/advanced", searchHandler.AdvancedSearch)
 	api.GET("/search/by-vector/:vector_id", searchHandler.GetImageByVectorID)
+	api.POST("/search/base64", searchHandler.SearchByBase64)
+	api.POST("/search/record-by-image", searchHandler.GetRecordDetailsByImage)
+
+	// Stats routes
+	api.GET("/stats", statsHandler.GetDashboardStats)
 
 	// Serve uploaded images
 	router.Static("/uploads", "./uploads")

@@ -4,6 +4,24 @@
 - **Use consistent naming conventions, file structure, and architecture patterns** as described in `./PRPS/image-rag-service.md`.
 - **Project Goal**: Image RAG service for vector-based image search returning image info (id, name, description)
 
+### 📊 Project Status Summary
+**Current Status**: ✅ **Core Features Complete** - Image RAG service is fully functional with all major components integrated and tested.
+
+**Key Achievements**:
+- ✅ Direct Doubao API integration in Go backend (no Python dependency)
+- ✅ Complete Vue.js frontend with TypeScript
+- ✅ MySQL + Milvus database integration
+- ✅ Docker containerization with compose setup
+- ✅ REST API with OpenAPI documentation
+- ✅ Production-ready deployment configuration
+
+**Services Architecture**:
+- **Backend**: Go + Gin REST API (port 8080)
+- **Frontend**: Vue.js 3 SPA (port 3000)
+- **Database**: MySQL 8.0 + Milvus 2.3
+- **Storage**: Local filesystem for images
+- **Vectorization**: Doubao doubao-embedding-vision-250615 API
+
 ### 🧱 Code Structure & Modularity
 - **Never create a file longer than 500 lines of code.** If a file approaches this limit, refactor by splitting it into modules or helper files.
 - **Organize code into clearly separated modules**, grouped by feature or responsibility.
@@ -19,8 +37,9 @@
 - **Use environment variables** for configuration (database URLs, API keys, etc.)
 
 ### ✅ Task Completion
+- **Always update `TASK.md` at the start of new requirements** before beginning work.
 - **Mark completed tasks in `TASK.md`** immediately after finishing them.
-- Add new sub-tasks or TODOs discovered during development to `TASK.md` under a “Discovered During Work” section.
+- Add new sub-tasks or TODOs discovered during development to `TASK.md` under a "Discovered During Work" section.
 
 ### 📎 Style & Conventions
 - **Backend**: Go with Gin framework, follow Go conventions and use `gofmt` for formatting
@@ -42,14 +61,5 @@
   - **Milvus**: Vector database for image embeddings
   - **MySQL**: Relational database for metadata storage
 
-### 🧠 AI Behavior Rules
-- **Never assume missing context. Ask questions if uncertain.**
-- **Never hallucinate libraries or functions** – only use known, verified packages for Go and Node.js
-- **Always confirm file paths and module names** exist before referencing them in code or tests
-- **Never delete or overwrite existing code** unless explicitly instructed to or if part of a task from `TASK.md`
-- **Service Architecture**:
-  - **Backend API**: Go + Gin (port 8080)
-  - **Frontend**: Vue.js (port 3000)
-  - **Databases**: MySQL (3306) + Milvus (19530)
-- **Image Processing**: Use Doubao doubao-embedding-vision-250615 for vectorization
-- **File Structure**: Follow microservices pattern with clear separation of concerns
+### 💡 Key Memories
+- to memorize

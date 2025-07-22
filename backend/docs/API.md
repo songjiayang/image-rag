@@ -216,6 +216,63 @@ Response: 200 OK
 }
 ```
 
+#### Search Similar Images (Base64)
+```
+POST /api/v1/search/base64
+Content-Type: application/json
+
+Request Body:
+{
+  "image_base64": "base64_encoded_image_data",
+  "format": "jpeg", // optional: jpeg, png, webp
+  "top_k": 10 // optional: number of results (default: 10, max: 100)
+}
+
+Response: 200 OK
+{
+  "results": [
+    {
+      "record_id": 1,
+      "record_name": "Similar Item",
+      "description": "Description",
+      "image_id": 1,
+      "filename": "image1.jpg",
+      "distance": 0.1234
+    }
+  ],
+  "count": 5,
+  "format": "jpeg"
+}
+```
+
+#### Get Record Details by Base64 Image
+```
+POST /api/v1/search/record-by-image
+Content-Type: application/json
+
+Request Body:
+{
+  "image_base64": "base64_encoded_image_data",
+  "format": "jpeg" // optional: jpeg, png, webp
+}
+
+Response: 200 OK
+{
+  "record": {
+    "id": 1,
+    "name": "Record Name",
+    "description": "Record description",
+    "created_at": "2025-07-17T10:00:00Z",
+    "updated_at": "2025-07-17T10:00:00Z"
+  },
+  "image": {
+    "id": 1,
+    "filename": "image1.jpg",
+    "distance": 0.1234
+  }
+}
+```
+
 ### File Serving
 
 #### Serve Uploaded Images

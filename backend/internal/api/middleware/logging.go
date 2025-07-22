@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"fmt"
-	"image-rag-backend/internal/logger"
 	"time"
+
+	"image-rag-backend/internal/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"

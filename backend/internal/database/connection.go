@@ -2,10 +2,11 @@ package database
 
 import (
 	"fmt"
-	"image-rag-backend/internal/config"
-	"image-rag-backend/internal/models"
 	"log"
 	"time"
+
+	"image-rag-backend/internal/config"
+	"image-rag-backend/internal/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

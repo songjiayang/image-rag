@@ -35,10 +35,10 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <el-icon class="stat-icon" color="#e6a23c"><Search /></el-icon>
+            <el-icon class="stat-icon" color="#e6a23c"><DocumentAdd /></el-icon>
             <div class="stat-info">
-              <div class="stat-number">{{ stats.todaySearches }}</div>
-              <div class="stat-label">Today's Searches</div>
+              <div class="stat-number">{{ stats.todayRecords }}</div>
+              <div class="stat-label">Today's Records</div>
             </div>
           </div>
         </el-card>
@@ -47,10 +47,10 @@
       <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card" shadow="hover">
           <div class="stat-content">
-            <el-icon class="stat-icon" color="#f56c6c"><Upload /></el-icon>
+            <el-icon class="stat-icon" color="#f56c6c"><Picture /></el-icon>
             <div class="stat-info">
-              <div class="stat-number">{{ stats.todayUploads }}</div>
-              <div class="stat-label">Today's Uploads</div>
+              <div class="stat-number">{{ stats.todayImages }}</div>
+              <div class="stat-label">Today's Images</div>
             </div>
           </div>
         </el-card>
@@ -150,17 +150,25 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { recordService } from '@/services/api'
+import { recordService, statsService } from '@/services/api'
 import type { Record } from '@/types'
 import { formatDate } from '@/utils/date-utils'
+import { 
+  Document, 
+  Picture, 
+  DocumentAdd, 
+  Plus, 
+  Search, 
+  Clock 
+} from '@element-plus/icons-vue'
 
 const router = useRouter()
 
 const stats = ref({
   totalRecords: 0,
   totalImages: 0,
-  todaySearches: 0,
-  todayUploads: 0
+  todayRecords: 0,
+  todayImages: 0
 })
 
 const recentRecords = ref<Record[]>([])
@@ -169,22 +177,17 @@ const loading = ref(false)
 const loadDashboardData = async () => {
   loading.value = true
   try {
-    const [recordsResponse, recentResponse] = await Promise.all([
-      recordService.getRecords(1, 100),
-      recordService.getRecords(1, 8)
+    const [statsResponse, recentResponse] = await Promise.all([
+      statsService.getDashboardStats(),
+      recordService.getRecords(1, 4)
     ])
     
-    stats.value.totalRecords = recordsResponse.total
-    
-    // Calculate total images
-    const totalImagesCount = recordsResponse.data.reduce((sum, record) => sum + record.images.length, 0)
-    stats.value.totalImages = totalImagesCount
+    stats.value.totalRecords = statsResponse.data.total_records
+    stats.value.totalImages = statsResponse.data.total_images
+    stats.value.todayRecords = statsResponse.data.today_records
+    stats.value.todayImages = statsResponse.data.today_images
     
     recentRecords.value = recentResponse.data
-    
-    // Mock search/upload stats (would come from analytics in real app)
-    stats.value.todaySearches = Math.floor(Math.random() * 100)
-    stats.value.todayUploads = Math.floor(Math.random() * 20)
   } catch (error) {
     console.error('Failed to load dashboard data:', error)
   } finally {

@@ -2,11 +2,12 @@ package services
 
 import (
 	"fmt"
-	"image-rag-backend/internal/database"
-	"image-rag-backend/internal/models"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"image-rag-backend/internal/database"
+	"image-rag-backend/internal/models"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

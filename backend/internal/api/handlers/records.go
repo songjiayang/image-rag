@@ -2,9 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"image-rag-backend/internal/logger"
-	"image-rag-backend/internal/models"
-	"image-rag-backend/internal/services"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -12,6 +9,10 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"image-rag-backend/internal/logger"
+	"image-rag-backend/internal/models"
+	"image-rag-backend/internal/services"
 )
 
 // @Summary Create a new record with images

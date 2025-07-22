@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"image-rag-backend/internal/config"
@@ -80,6 +81,49 @@ func (c *Client) GenerateEmbedding(imagePath string) ([]float32, error) {
 	// Get image format
 	format := getImageFormat(imagePath)
 
+	return c.generateEmbeddingFromData(imageData, format)
+}
+
+func (c *Client) GenerateEmbeddingFromFile(file multipart.File, filename string) ([]float32, error) {
+	if c.apiKey == "" {
+		return nil, fmt.Errorf("doubao api key is required")
+	}
+
+	// Read file content
+	fileContent, err := io.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	// Encode to base64
+	imageData := base64.StdEncoding.EncodeToString(fileContent)
+
+	// Get image format
+	format := getImageFormat(filename)
+
+	return c.generateEmbeddingFromData(imageData, format)
+}
+
+// GenerateEmbeddingFromBase64 processes base64 image data and returns embedding
+func (c *Client) GenerateEmbeddingFromBase64(base64Data string, format string) ([]float32, error) {
+	if c.apiKey == "" {
+		return nil, fmt.Errorf("doubao api key is required")
+	}
+
+	// Clean base64 data (remove data URL prefix if present)
+	cleanBase64 := cleanBase64Data(base64Data)
+
+	// Validate format
+	if format == "" {
+		format = "jpeg" // default fallback
+	}
+
+	return c.generateEmbeddingFromData(cleanBase64, format)
+}
+
+// generateEmbeddingFromData is a private method that handles the common HTTP request logic
+// for generating embeddings from base64 encoded image data
+func (c *Client) generateEmbeddingFromData(base64Data string, format string) ([]float32, error) {
 	// Prepare request
 	req := EmbeddingRequest{
 		Model: c.model,
@@ -87,7 +131,7 @@ func (c *Client) GenerateEmbedding(imagePath string) ([]float32, error) {
 			{
 				Type: "image_url",
 				ImageUrl: ImageUrl{
-					Url: fmt.Sprintf("data:image/%s;base64,%s", format, imageData),
+					Url: fmt.Sprintf("data:image/%s;base64,%s", format, base64Data),
 				},
 			},
 		},
@@ -137,78 +181,13 @@ func (c *Client) GenerateEmbedding(imagePath string) ([]float32, error) {
 	return response.Data.Embedding, nil
 }
 
-func (c *Client) GenerateEmbeddingFromFile(file multipart.File, filename string) ([]float32, error) {
-	if c.apiKey == "" {
-		return nil, fmt.Errorf("doubao api key is required")
+// cleanBase64Data removes data URL prefix from base64 string if present
+func cleanBase64Data(base64Data string) string {
+	// Remove data URL prefix like "data:image/jpeg;base64,"
+	if idx := strings.Index(base64Data, "base64,"); idx != -1 {
+		return base64Data[idx+7:]
 	}
-
-	// Read file content
-	fileContent, err := io.ReadAll(file)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
-	}
-
-	// Encode to base64
-	imageData := base64.StdEncoding.EncodeToString(fileContent)
-
-	// Get image format
-	format := getImageFormat(filename)
-
-	// Prepare request
-	req := EmbeddingRequest{
-		Model: c.model,
-		Input: []ImageData{
-			{
-				Type: "image_url",
-				ImageUrl: ImageUrl{
-					Url: fmt.Sprintf("data:image/%s;base64,%s", format, imageData),
-				},
-			},
-		},
-		Dimensions: 1024,
-	}
-
-	jsonData, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	// Create HTTP request
-	httpReq, err := http.NewRequest("POST", c.url, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", "Bearer "+c.apiKey)
-
-	// Send request
-	resp, err := c.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("doubao api error: %s", string(body))
-	}
-
-	// Parse response
-	var response EmbeddingResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	if response.Data.Object != "embedding" {
-		return nil, fmt.Errorf("unexpected response object type: %s", response.Data.Object)
-	}
-
-	if len(response.Data.Embedding) == 0 {
-		return nil, fmt.Errorf("empty embedding in response")
-	}
-
-	return response.Data.Embedding, nil
+	return base64Data
 }
 
 // encodeImageToBase64 reads an image file and returns base64 encoded data

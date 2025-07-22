@@ -131,4 +131,25 @@ export const healthService = {
   },
 };
 
+export const statsService = {
+  async getDashboardStats(): Promise<{
+    data: {
+      total_records: number;
+      total_images: number;
+      today_records: number;
+      today_images: number;
+    }
+  }> {
+    const response = await api.get<{
+      data: {
+        total_records: number;
+        total_images: number;
+        today_records: number;
+        today_images: number;
+      }
+    }>('/stats');
+    return response.data;
+  },
+};
+
 export default api;

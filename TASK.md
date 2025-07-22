@@ -47,6 +47,12 @@
   - Add request queuing for vectorization
   - Optimize image processing pipeline
 
+- [x] **Dashboard Statistics API** - Add dedicated stats endpoint for dashboard
+  - Create /api/v1/stats endpoint in Go backend
+  - Implement statistics service to aggregate data from MySQL and Milvus
+  - Add frontend integration for real-time dashboard stats
+  - Include: total records, total images, today records, today images
+
 ## Completed Tasks
 - [x] **Backend API Structure** - Go + Gin REST API foundation
 - [x] **Basic Project Structure** - Set up microservices architecture

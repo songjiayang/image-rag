@@ -2,11 +2,12 @@ package services
 
 import (
 	"fmt"
+	"sync"
+	"time"
+
 	"image-rag-backend/internal/config"
 	"image-rag-backend/internal/doubao"
 	"image-rag-backend/internal/milvus"
-	"sync"
-	"time"
 )
 
 type VectorService struct {
@@ -226,15 +227,51 @@ func (s *VectorService) AsyncProcessImage(imagePath string, resultChan chan<- st
 	}()
 }
 
-// UpdateVector updates an existing vector
-func (s *VectorService) UpdateVector(oldVectorID string, newImagePath string) (string, error) {
-	// Delete old vector
-	if err := s.DeleteVector(oldVectorID); err != nil {
-		return "", fmt.Errorf("failed to delete old vector: %w", err)
+// GenerateVectorFromBase64 generates vector from base64 image data
+func (s *VectorService) GenerateVectorFromBase64(base64Data string, format string) (string, []float32, error) {
+	// Generate embedding using Doubao
+	embedding, err := s.doubaoClient.GenerateEmbeddingFromBase64(base64Data, format)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to generate embedding: %w", err)
 	}
 
-	// Process new image
-	return s.ProcessImage(newImagePath)
+	// Generate unique vector ID
+	vectorID := generateUUID()
+
+	// Insert into Milvus
+	_, err = s.milvusClient.InsertVector(vectorID, embedding)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to insert vector into milvus: %w", err)
+	}
+
+	// Return the original vector ID (UUID) and embedding
+	return vectorID, embedding, nil
+}
+
+// SearchSimilarFromBase64 searches for similar images from base64 image data
+func (s *VectorService) SearchSimilarFromBase64(base64Data string, format string, topK int) ([]SearchResult, error) {
+	// Generate embedding for query image
+	embedding, err := s.doubaoClient.GenerateEmbeddingFromBase64(base64Data, format)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate query embedding: %w", err)
+	}
+
+	// Search in Milvus
+	results, err := s.milvusClient.SearchSimilar(embedding, topK)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search similar vectors: %w", err)
+	}
+
+	// Convert to our result format
+	var searchResults []SearchResult
+	for _, result := range results {
+		searchResults = append(searchResults, SearchResult{
+			ImageID:  result.VectorID,
+			Distance: result.Distance,
+		})
+	}
+
+	return searchResults, nil
 }
 
 // generateUUID generates a unique identifier
