@@ -2,8 +2,8 @@ package config
 
 import (
 	"log"
-	"os"
-	"strconv"
+
+	"image-rag-backend/internal/utils"
 
 	"github.com/joho/godotenv"
 )
@@ -54,18 +54,18 @@ func Load() *Config {
 
 	return &Config{
 		Database: DatabaseConfig{
-			Host:     getEnv("MYSQL_HOST", "localhost"),
-			Port:     getEnv("MYSQL_PORT", "3306"),
-			User:     getEnv("MYSQL_USER", "root"),
-			Password: getEnv("MYSQL_PASSWORD", "password"),
-			Database: getEnv("MYSQL_NAME", "image_rag"),
+			Host:     utils.GetEnv("MYSQL_HOST", "localhost"),
+			Port:     utils.GetEnv("MYSQL_PORT", "3306"),
+			User:     utils.GetEnv("MYSQL_USER", "root"),
+			Password: utils.GetEnv("MYSQL_PASSWORD", "password"),
+			Database: utils.GetEnv("MYSQL_NAME", "image_rag"),
 		},
 		Server: ServerConfig{
-			Port: getEnv("SERVER_PORT", "8080"),
+			Port: utils.GetEnv("SERVER_PORT", "8080"),
 		},
 		Upload: UploadConfig{
-			Path:      getEnv("UPLOAD_PATH", "./uploads"),
-			MaxSizeMB: int64(getEnvInt("MAX_UPLOAD_SIZE_MB", 10)),
+			Path:      utils.GetEnv("UPLOAD_PATH", "./uploads"),
+			MaxSizeMB: int64(utils.GetEnvInt("MAX_UPLOAD_SIZE_MB", 10)),
 			AllowedExt: map[string]bool{
 				".jpg":  true,
 				".jpeg": true,
@@ -74,30 +74,14 @@ func Load() *Config {
 			},
 		},
 		Doubao: DoubaoConfig{
-			APIKey: getEnv("DOUBAO_API_KEY", ""),
-			Model:  getEnv("DOUBAO_MODEL", "doubao-embedding-vision-250615"),
-			URL:    getEnv("DOUBAO_API_URL", "https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal"),
+			APIKey: utils.GetEnv("DOUBAO_API_KEY", ""),
+			Model:  utils.GetEnv("DOUBAO_MODEL", "doubao-embedding-vision-250615"),
+			URL:    utils.GetEnv("DOUBAO_API_URL", "https://ark.cn-beijing.volces.com/api/v3/embeddings/multimodal"),
 		},
 		Milvus: MilvusConfig{
-			Host:     getEnv("MILVUS_HOST", "localhost"),
-			Port:     getEnv("MILVUS_PORT", "19530"),
-			Database: getEnv("MILVUS_DATABASE", "image_rag"),
+			Host:     utils.GetEnv("MILVUS_HOST", "localhost"),
+			Port:     utils.GetEnv("MILVUS_PORT", "19530"),
+			Database: utils.GetEnv("MILVUS_DATABASE", "image_rag"),
 		},
 	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
 }
