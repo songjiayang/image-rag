@@ -30,8 +30,9 @@ type imageRetrieveResp struct {
 }
 
 func NewImageRagTool() *protocol.Tool {
-	tool, err := protocol.NewTool("图片信息查询",
-		"根据输入图片文件路径，进行向量搜索，返回图片的具体信息，作为用户后续问答的参考",
+	tool, err := protocol.NewTool(
+		"image-rag-retrive",
+		"根据输入图片文件路径，进行向量搜索，返回图片的具体信息，方便用于后续的图片内容解析和问答需求。",
 		imageRetrieveReq{},
 	)
 	if err != nil {
